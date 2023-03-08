@@ -1,0 +1,5 @@
+{
+    "workbench.colorTheme": "Night Owl",
+    "markdown.extension.print.theme": "dark",
+    "typescript.inlayHints.enumMemberValues.enabled": false
+}
