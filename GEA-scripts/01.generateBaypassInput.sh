@@ -39,32 +39,7 @@ cat popenvPCA.tsv | perl env2baypass.pl SOSP.baypass.pop SOSP_env.baypass
 
 
 ########## Step 3: running BayPass ##########
-#download and compile BayPass
-cd program/
-wget http://www1.montpellier.inra.fr/CBGP/software/baypass/files/baypass_2.3.tar.gz
-tar -zxvf baypass_2.3.tar.gz
-cd baypass_2.3/sources/
-make clean all FC=gfortran
-/workdir/kcarbeck/program/baypass_2.3/sources/g_baypass -help # check
-cd ..
-
-#run BayPass under the core model mode to generate covariance matrix
-npop=$(wc -l /workdir/kcarbeck/cache/SOSP.baypass.pop | cut -d " " -f1)
-# echo $npop #27
-
-/workdir/kcarbeck/program/baypass_2.3/sources/g_baypass -npop $npop -gfile /workdir/kcarbeck/cache/SOSP.baypass.txt -outprefix /workdir/kcarbeck/cache/output/SOSP_core -nthreads 16
-    # BayPass Version 2.3
-    # Reading and checking input data
-    # Reading and checking analysis parameters
-    # Analysis started. It will consist of:
-    #     i) 20 pilot runs of  500 iterations (to adjust proposal distributions)
-    #    ii) a burn-in period of  5000 iterations
-    #   iii) final MCMC sampling of 1000 parameter values sampled every  20 iterations (i.e.,   20000 iterations)
-    #  Note: progress bars indicate the progression at each of the three steps
-    #        while the given e.t.a. is the (estimated) remaining time until full completion of the analysis
-    # estimated about 7-8 days to complete
-
-
+# see 02.baypass.sh script
 
 
 
