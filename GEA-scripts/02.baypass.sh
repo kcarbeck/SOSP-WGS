@@ -32,6 +32,9 @@ npop=$(wc -l /workdir/kcarbeck/cache/SOSP.baypass.pop | cut -d " " -f1)
     #        while the given e.t.a. is the (estimated) remaining time until full completion of the analysis
     # estimated about 7-8 days to complete
 
+    # Analysis completed in  7 d  3 h 26 min  8 sec
+    # See the log file for details about the run: /workdir/kcarbeck/cache/output/SOSP_core_baypass.log
+
 
 Rscript script/corrplot.R
     # This will generate output/GSD_RAD_core_mat_omega.png.

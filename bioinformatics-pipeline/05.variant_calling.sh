@@ -2,18 +2,20 @@
 # split by chromosome/contig
 # authors:katherine carbeck and jen walsh
 
-#### explore a bam file to figure out how to split up over 40 cores
-samtools view -H CA_heermanni_Mme77.bam_sorted_mark.bam | less
+#### explore a bam file to figure out how to split up over 24 cores
+samtools view -H ON_melodia_81.bam_sorted_mark.bam | less
 
 ## get genome length
 # grep lines that with @SQ
-samtools view -H CA_heermanni_Mme77.bam_sorted_mark.bam | grep "^@SQ" | cut -f 3 | cut -d: -f2 | awk '{sum+=$1}END{print sum}'
+samtools view -H ON_melodia_81.bam_sorted_mark.bam | grep "^@SQ" | cut -f 3 | cut -d: -f2 | awk '{sum+=$1}END{print sum}'
+    #1,073,508,825
 
 ## get number of contigs
-samtools view -H CA_heermanni_Mme77.bam_sorted_mark.bam | grep "^@SQ" | cut -f 3 | cut -d: -f2 | wc -l
+samtools view -H ON_melodia_81.bam_sorted_mark.bam | grep "^@SQ" | cut -f 3 | cut -d: -f2 | wc -l
+    # 5,208
 
 # make regions file
-samtools view -H CA_heermanni_Mme77.bam_sorted_mark.bam | grep "^@SQ" | cut -f 2,3  | awk '
+samtools view -H ON_melodia_81.bam_sorted_mark.bam | grep "^@SQ" | cut -f 2,3  | awk '
 BEGIN {
     cutoff=27000000
     FS=OFS="\t"
@@ -32,7 +34,7 @@ BEGIN {
 
 
 # looking at mapping quality
-samtools view --exclude-flags SECONDARY,SUPPLEMENTARY CA_heermanni_Mme77.bam_sorted_mark.bam | cut -f5 | sort -nr | uniq -c | less
+samtools view --exclude-flags SECONDARY,SUPPLEMENTARY ON_melodia_81.bam_sorted_mark.bam | cut -f5 | sort -nr | uniq -c | less
 
 
 # http://www.htslib.org/doc/bcftools.html#mpileup
@@ -52,15 +54,15 @@ samtools view --exclude-flags SECONDARY,SUPPLEMENTARY CA_heermanni_Mme77.bam_sor
   # -b = List of input alignment files, one file per line (samplename_sorted_RGmark.bam)
 
 
-mkdir vcf2
+mkdir vcf
 
-genome=SongSparrow_reference.fasta
-bamfiles=*_sorted_mark.bam
+genome=/workdir/kcarbeck/SongSparrow_reference.fasta
+bamfiles=/workdir/kcarbeck/align/*_sorted_mark.bam
 for regions in regions_*.txt; do
     mpileupVCF=${regions%.txt}.raw.mpileup.vcf
     echo $mpileupVCF
-    bcftools mpileup -a "FORMAT/AD,FORMAT/DP,INFO/AD,FORMAT/DV,FORMAT/DP4,FORMAT/DPR,INFO/DPR" --threads 2 -d 1000 --min-MQ 30 --regions-file $regions -Ou -f $genome $bamfiles | bcftools call --multiallelic-caller --variants-only --threads 2 -vm -Ov -o vcf2/$mpileupVCF 2>&1 | tee vcf2/${regions%.txt}.mpileup.$(date +%Y%m%d-%Hh%Mm%Ss).log &
-    sleep 30
+    bcftools mpileup -a "FORMAT/AD,FORMAT/DP,INFO/AD,FORMAT/DV,FORMAT/DP4,FORMAT/DPR,INFO/DPR" --threads 2 -d 1000 --min-MQ 30 --regions-file $regions -Ou -f $genome $bamfiles | bcftools call --multiallelic-caller --variants-only --threads 2 -vm -Ov -o /workdir/kcarbeck/vcf/$mpileupVCF 2>&1 | tee /workdir/kcarbeck/vcf/${regions%.txt}.mpileup.$(date +%Y%m%d-%Hh%Mm%Ss).log &
+    sleep 10
 done
 
 
@@ -88,8 +90,8 @@ for filteredVCF in *.filtered.vcf.recode.vcf; do
 done
 
 # then, bcftools concatenate
-bcftools concat regions_01.sorted.filtered.vcf regions_02.sorted.filtered.vcf regions_03.sorted.filtered.vcf regions_04.sorted.filtered.vcf regions_05.sorted.filtered.vcf regions_06.sorted.filtered.vcf regions_07.sorted.filtered.vcf regions_08.sorted.filtered.vcf regions_09.sorted.filtered.vcf regions_10.sorted.filtered.vcf regions_11.sorted.filtered.vcf regions_12.sorted.filtered.vcf regions_13.sorted.filtered.vcf regions_14.sorted.filtered.vcf regions_15.sorted.filtered.vcf regions_16.sorted.filtered.vcf regions_17.sorted.filtered.vcf regions_18.sorted.filtered.vcf regions_19.sorted.filtered.vcf regions_20.sorted.filtered.vcf regions_21.sorted.filtered.vcf regions_22.sorted.filtered.vcf regions_23.sorted.filtered.vcf regions_24.sorted.filtered.vcf regions_25.sorted.filtered.vcf regions_26.sorted.filtered.vcf regions_27.sorted.filtered.vcf regions_28.sorted.filtered.vcf regions_29.sorted.filtered.vcf regions_30.sorted.filtered.vcf -Oz -o filtered_SOSP_352Samples_122322.vcf.gz
+bcftools concat regions_01.sorted.filtered.vcf regions_02.sorted.filtered.vcf regions_03.sorted.filtered.vcf regions_04.sorted.filtered.vcf regions_05.sorted.filtered.vcf regions_06.sorted.filtered.vcf regions_07.sorted.filtered.vcf regions_08.sorted.filtered.vcf regions_09.sorted.filtered.vcf regions_10.sorted.filtered.vcf regions_11.sorted.filtered.vcf regions_12.sorted.filtered.vcf regions_13.sorted.filtered.vcf regions_14.sorted.filtered.vcf regions_15.sorted.filtered.vcf regions_16.sorted.filtered.vcf regions_17.sorted.filtered.vcf regions_18.sorted.filtered.vcf regions_19.sorted.filtered.vcf regions_20.sorted.filtered.vcf regions_21.sorted.filtered.vcf regions_22.sorted.filtered.vcf regions_23.sorted.filtered.vcf regions_24.sorted.filtered.vcf regions_25.sorted.filtered.vcf regions_26.sorted.filtered.vcf regions_27.sorted.filtered.vcf regions_28.sorted.filtered.vcf regions_29.sorted.filtered.vcf regions_30.sorted.filtered.vcf -Oz -o filtered_SOSP_6Samples_031323.vcf.gz
 
 # valadate vcf to make sure everything is ok
-vcf-validator filtered_SOSP_352Samples_122322.vcf.gz
-#12,579,961
+vcf-validator filtered_SOSP_6Samples_031323.vcf.gz
+

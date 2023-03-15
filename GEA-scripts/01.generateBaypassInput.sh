@@ -29,7 +29,7 @@ zcat /workdir/kcarbeck/filtered_SOSP_351Samples.LDpruned.vcf.gz | perl vcf2baypa
     # This step will generate 3 files in cache/ with the SOSP.baypass prefix. The main file cache/SOSP.baypass.txt is the one required by BayPass. Two other files cache/SOSP.baypass.pop and cache/SOSP.baypass.snp record the order of populations and locations of SNPs, respectively, and will be used in the following steps. Check if the numbers of populations and SNPs are correct:
 wc -l SOSP.baypass.pop # number of populations, which should be 27 in this case
 wc -l SOSP.baypass.txt # number of SNPs, which should be 13,663,960
-wc -l SOSP.baypass.snp # number of SNPs as well 13663960
+wc -l SOSP.baypass.snp # number of SNPs as well 13,663,960
 
 
 ############# Step 2: generate the covariate data file from environmental dataset using env2baypass.pl ###########

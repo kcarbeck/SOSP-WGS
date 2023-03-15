@@ -6,7 +6,7 @@
 # Reserved a medium machine (24 cores)
 # Bam files from mapping script above are indexed and sorted already
 # copy into workdir:
-\ls *.bam | parallel -j 20 cp -a {} /workdir/jlw395 &
+\ls *.bam | parallel -j 20 cp -a {} /workdir/align/kcarbeck &
 
 
 
@@ -23,6 +23,8 @@ samtools faidx SongSparrow_reference.fasta
 # MAX_FILE_HANDLES_FOR_READ_ENDS_MAP: maximum number of file handles to keep open when spilling read ends to a desk. keep this set at 1000
 # uses a lot of memory (could probably run more than 8 at a time if I decreased -Xmx to ~10g?)
 
+cd /workdir/kcarbeck/align
+
 for RGBAM in *_sorted.bam; do
 
   #string replacement command
@@ -30,30 +32,30 @@ for RGBAM in *_sorted.bam; do
   METRICS=${RGBAM/%_sorted.bam/.metrics.txt}
 
   #create index file
-  echo "java -Xmx15g -jar /programs/picard-tools-2.8.2/picard.jar MarkDuplicates INPUT=$RGBAM OUTPUT=$OUT METRICS_FILE=$METRICS MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000" >> /workdir/jlw395/markDuplicatesCommands.txt
+  echo "java -Xmx15g -jar /programs/picard-tools-2.8.2/picard.jar MarkDuplicates INPUT=$RGBAM OUTPUT=$OUT METRICS_FILE=$METRICS MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000" >> /workdir/kcarbeck/align/markDuplicatesCommands.txt
 
 done
 
-parallel -j 8 < /workdir/jlw395/markDuplicatesCommands.txt
+parallel -j 6 < /workdir/kcarbeck/align/markDuplicatesCommands.txt
 
 
 
 #### Validate files
 # since running HaplotypeCaller, don't need to realign or fix mates unless there is an error in ValidateSamFile
 
-[ -f /workdir/jlw395/validateCommands.txt ] && rm /workdir/jlw395/validateCommands.txt
+[ -f /workdir/kcarbeck/align/validateCommands.txt ] && rm /workdir/kcarbeck/align/validateCommands.txt
 
-cd /workdir/jlw395/
+cd /workdir/kcarbeck/align/
 
 for MARKBAM in *mark.bam; do
 
   OUTFILE=${MARKBAM/%.bam/_validate}
 
-  echo "java -Xmx48g -jar /programs/picard-tools-2.8.2/picard.jar ValidateSamFile I=$MARKBAM OUTPUT=$OUTFILE MODE=SUMMARY" >> /workdir/jlw395/ValidateCommands.txt
+  echo "java -Xmx48g -jar /programs/picard-tools-2.8.2/picard.jar ValidateSamFile I=$MARKBAM OUTPUT=$OUTFILE MODE=SUMMARY" >> /workdir/kcarbeck/align/ValidateCommands.txt
 
 done
 
-parallel -j 22 < /workdir/jlw395/ValidateCommands.txt
+parallel -j 6 < /workdir/kcarbeck/align/ValidateCommands.txt
 
 # concatenate all validate output into one text file to see if there are any errors
 cat *validate > summary_validate.txt
@@ -62,15 +64,15 @@ cat *validate > summary_validate.txt
 
 #### index .bam files for HaplotypeCaller
 #can run multiple at a time
-[ -f /workdir/jlw395/IndexCommands.txt ] && rm /workdir/jlw395/IndexCommands.txt
+[ -f /workdir/kcarbeck/align/IndexCommands.txt ] && rm /workdir/kcarbeck/align/IndexCommands.txt
 
-cd /workdir/jlw395/
+cd /workdir/kcarbeck/align/
 
 for MARKBAM in *mark.bam; do
 
   #create index file
-  echo "java -Xmx10g -jar /programs/picard-tools-2.8.2/picard.jar BuildBamIndex I=$MARKBAM" >> /workdir/jlw395/IndexCommands.txt
+  echo "java -Xmx10g -jar /programs/picard-tools-2.8.2/picard.jar BuildBamIndex I=$MARKBAM" >> /workdir/kcarbeck/align/IndexCommands.txt
 
 done
 
-parallel -j 22 < /workdir/jlw395/IndexCommands.txt
+parallel -j 6 < /workdir/kcarbeck/align/IndexCommands.txt
