@@ -273,8 +273,8 @@ NV_montana_S43
 NV_montana_S44
 NV_montana_S45
 NV_montana_S46
-NV_montana_S47
-NV_montana_S48
+OR_montana_S47
+OR_montana_S48
 ON_melodia_S79
 OR_montana_S50
 OR_montana_S51

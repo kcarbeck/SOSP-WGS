@@ -1,30 +1,45 @@
 #!/usr/bin/Rscript
 
 # plot structure from ADMIXTURE 
-# 24 feb 2023
+# 27 july 2023
 # Author: katherine carbeck
 library(tidyverse)
 
-setwd("/Users/katherine/Desktop/PhD/github/song-sparrow-WGS/pop-gen/ADMIXTURE")
+setwd("/Users/katherine/Desktop/PhD/github/song-sparrow-WGS/pop-gen-data/ADMIXTURE")
 
-#samplelist <- read_delim("filtered_SOSP_352Samples_122322.list", delim=" ",
+
+# use sample/pop list prepared for baypass 
+samplelist <- read.table(file='popfile.tsv', sep='\t', quote='',
+                 col.names = c('sample', 'population') )
+
+
+## old:
+# samplelist <- read_delim("LDpruned_plink.list", delim=" ",
 #                         col_names = c("sample", "population"))
-samplelist <- read.csv("listFile.csv")
 
-# CV from first run:
-  # (K=1): 0.30681
-  # (K=2): 0.44270
-  # (K=3): 0.47874
-  # (K=4): 0.43771
-  # (K=5): 0.48460
-  # (K=6): 0.39155
-  # (K=7): 0.38747
-  # (K=8): 0.40383
-  # (K=9): 0.58485
-  # (K=10): 0.58806
-  # (K=11): 0.60077
-  # (K=14): 0.63035
-  # (K=20): 0.29449
+## CV errors:
+  # 1 0.57670
+  # 2 0.54944
+  # 3 0.52711
+  # 4 0.51932
+  # 5 0.51369
+  # 6 0.50779
+  # 7 0.50794
+  # 8 0.50542
+  # 9 0.50409 **
+  # 10 0.50549
+  # 11 0.50957
+  # 12 0.51479
+  # 13 0.51728
+  # 14 0.51907
+  # 15 0.52249
+  # 16 0.52772
+  # 17 0.53622
+  # 18 0.54955
+  # 19 0.54804
+  # 20 0.55295
+  # 21 0.56145
+  # 22 0.58397
 
 # We're using the command _read\_delim_ which requires column names. Since the data file doesn't have any column names, we have to specify them and we're using a combination of paste and seq to produce "Q1", "Q2". We could have hard coded it c("Q1","Q2") but this way it works for an arbitrary number of columns just by changing the second value in seq(). 
 
@@ -38,9 +53,8 @@ all_data <- tibble(sample=character(),
                    Q=character(),
                    value=numeric())
 
-#vec<- c(1,2,3,4,5,6,7,8,9,10,11,)
-for (k in 1:8){
-  data <- read_delim(paste0("filtered_SOSP_352Samples_122322.",k,".Q"),
+for (k in 1:22){
+  data <- read_delim(paste0("LDpruned_plink.",k,".Q"),
                      col_names = paste0("Q",seq(1:k)),
                      delim=" ")
   data$sample <- samplelist$sample
@@ -52,39 +66,137 @@ for (k in 1:8){
 }
 all_data
 
+# A tibble: 79,948 × 4
+#    sample                k Q     value
+#    <chr>             <int> <chr> <dbl>
+#  1 "ON_melodia_81  "     1 Q1        1
+#  2 "ON_melodia_83  "     1 Q1        1
+#  3 "ON_melodia_88  "     1 Q1        1
+#  4 "AK_caurina_S11 "     1 Q1        1
+#  5 "AK_caurina_S12 "     1 Q1        1
+#  6 "AK_caurina_S13 "     1 Q1        1
+#  7 "AK_caurina_S14 "     1 Q1        1
+#  8 "AK_caurina_S15 "     1 Q1        1
+#  9 "AK_caurina_S16 "     1 Q1        1
+# 10 "AK_caurina_S17 "     1 Q1        1
 
-'# A tibble: 23,232 × 4
-   sample             k Q     value
-   <chr>          <int> <chr> <dbl>
- 1 AK_caurina_S11     1 Q1        1
- 2 AK_caurina_S12     1 Q1        1
- 3 AK_caurina_S13     1 Q1        1
- 4 AK_caurina_S14     1 Q1        1
- 5 AK_caurina_S15     1 Q1        1
- 6 AK_caurina_S16     1 Q1        1
- 7 AK_caurina_S17     1 Q1        1
- 8 AK_caurina_S18     1 Q1        1
- 9 AK_caurina_S19     1 Q1        1
-10 AK_caurina_S20     1 Q1        1
-'
 
-all_data <- as.data.frame(all_data)
+dat <- samplelist %>% 
+  left_join(x=all_data, 
+            y=samplelist, 
+            by = c("sample"="sample"))
 
-dat <- left_join(x=all_data, y=samplelist, by = "sample", all.x = TRUE)
 write.csv(dat, "admixture_data.csv")
 head(dat)
+
+
+## GGPLOTLY - plot by population w/ all ks 
+library(randomcoloR)
+n <- 29
+palette <- distinctColorPalette(n)
+
+library(plotly)
+dat %>%
+  arrange(factor(population)) %>%
+  mutate(sample = factor(sample, levels = unique(sample))) %>% 
+  ggplot(.,aes(x=sample,y=value,fill=factor(Q))) + 
+  geom_bar(stat="identity",position="stack") +
+  xlab("Population") + ylab("Ancestry") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  scale_fill_manual(values = palette, 
+                    name="K",
+                    labels=seq(1:22))  +
+  facet_wrap(~k,ncol=1)
+ggplotly()
+
+
+##### 
+
+
+## REG GGPLOT - plot by population w/ all ks 
+jpeg(file="output/316Samples6x_k1-22.jpeg",width = 3000, height = 4000)
+dat %>%
+  arrange(factor(population)) %>%
+  mutate(sample = factor(sample, levels = unique(sample))) %>% 
+  ggplot(.,aes(x=sample,y=value,fill=factor(Q))) + 
+  geom_bar(stat="identity",position="stack") +
+  xlab("Population") + ylab("Ancestry") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  scale_fill_manual(values = palette, 
+                    name="K",
+                    labels=seq(1:22))  +
+  facet_wrap(~k,ncol=1)
+dev.off()
+
+
+
+## REG GGPLOT - plot by population w/ ONLY *k=9* most supported
+
+#filter
+k09 <- dat %>%
+  dplyr::filter(k == 9)
+#plot
+k09 %>%
+  arrange(factor(population)) %>%
+  mutate(sample = factor(sample, levels = unique(sample))) %>% 
+  ggplot(.,aes(x=sample,y=value,fill=factor(Q))) + 
+  geom_bar(stat="identity",position="stack") +
+  xlab("Population") + ylab("Ancestry") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  scale_fill_manual(values = palette, 
+                    name="K",
+                    labels=seq(1:22))  +
+  facet_wrap(~k,ncol=1)
+
+
+## REG GGPLOT - plot by population w/ ONLY *k=22* just for fun
+
+#filter
+k22 <- dat %>%
+  dplyr::filter(k == 22)
+#plot
+k22 %>%
+  arrange(factor(population)) %>%
+  mutate(sample = factor(sample, levels = unique(sample))) %>% 
+  ggplot(.,aes(x=sample,y=value,fill=factor(Q))) + 
+  geom_bar(stat="identity",position="stack") +
+  xlab("Population") + ylab("Ancestry") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  scale_fill_manual(values = palette, 
+                    name="K",
+                    labels=seq(1:22))  +
+  facet_wrap(~k,ncol=1)
+
+
+
+
+
+
+
+
+
+
+
+
+###############################################################################################################
+
+
+# old
+
 
 
 # Plot
 #positions <- (limits=c("maxima", "sanaka", "rufina", "merrilli"))
 
-#sub <- subset(dat, k< 8)
-
-tiff(file="admixture_plot.tiff",width = 10000, height = 5000,res=300)  
+pdf(file="admixture_plot.pdf",width = 10000, height = 5000,res=300)  
 dat %>%
   arrange(factor(population, 
                  #levels = c("maxima", "sanaka", "rufina", "merrilli")
-                 )) %>%
+  )) %>%
   mutate(sample = factor(sample, levels = unique(sample))) %>% 
   ggplot(.,aes(x=sample,y=value,fill=factor(Q))) + 
   geom_bar(stat="identity",position="stack") +
@@ -92,12 +204,19 @@ dat %>%
   theme_bw() +
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   #scale_fill_manual(values = c("#C3C1C1","#A4A2A2","#777777", "#3E3E3E"), name="K",
-                  #  labels=seq(1:8)) +
+  #  labels=seq(1:8)) +
   facet_wrap(~k,ncol=1)
 dev.off()
 
 
-###############################################################################################################
+
+
+
+
+
+###########################
+
+
 
 ### look at the k=20 now
 samplelist <- read.csv("listFile.csv")
@@ -126,7 +245,7 @@ dat <- left_join(x=all_data, y=samplelist, by = "sample", all.x = TRUE)
 head(dat)
 #
 
-tiff(file="admixture_k20_plot.tiff",width = 10000, height = 2000,res=300)
+pdf(file="admixture_k20_plot.pdf",width = 10000, height = 2000,res=300)
 dat %>%
   arrange(factor(subspecies, levels = c("maxima", "sanaka", "insignis", "kenaiensis", "caurina", "rufina", "merrilli", "morphna", "cleonensis", "montana","samuelis","pusillula","maxillaris","gouldii","heermanni","fallax","graminea","rivularis","adusta","mexicana","nominate","unknown"))) %>%
   mutate(sample = factor(sample, levels = unique(sample))) %>% 

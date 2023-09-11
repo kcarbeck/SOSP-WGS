@@ -1,30 +1,90 @@
 # summarize climateNA data by population
-# 28 feb 2023
+# 25 july 2023
 # katherine carbeck
 
-setwd("/Users/katherine/Desktop/PhD/github/song-sparrow-WGS/GEA")
+setwd("/Users/katherine/Desktop/PhD/github/song-sparrow-WGS/GEA-data")
 library(tidyverse)
+library(dplyr)
 
-dat <- read.csv("input/env.csv")
+# *step 1* july 20 - create popfile.tsv in the right format for baypass
+by.pop <- read.csv("pop.csv",header = FALSE)
+head(by.pop)
+write.table(by.pop, file='popfile.tsv', quote=FALSE, sep='\t', col.names=FALSE, row.names = FALSE)
+
+
+# july 25 - summarize climate vars (climate NA output) by population for baypass input
+clm<-read.csv("ClimateNA_output2.csv", stringsAsFactors = TRUE)
+str(clm)
+sub<-subset(clm, select=-c(ID1,long,lat,el))
+str(sub)
+
+by.pop <- sub %>%
+  group_by(ID2) %>%
+  summarize(across(everything(), mean))
+
+str(sub)
+write.csv(by.pop, "popenv.csv")
+
+
+
+###   standardize vars   ###
+clm<-read.csv("popenv.csv")
+str(clm)
+
+sub<-subset(clm, select=-(Population))
+str(sub)
+
+scaled <- sub %>% 
+  mutate_all(~(scale(.) %>% 
+                 as.vector))
+str(scaled)
+
+# cbind pop and scaled vars
+pop <- subset(clm, select=(Population))
+scaledpop<- cbind(pop, scaled)
+
+write.csv(scaledpop, "scaledPopEnv.csv")
+
+
+## change format for baypass input
+write.table(scaledpop, file='scaledPopEnv.tsv', quote=FALSE, sep='\t', row.names = FALSE)
+
+
+
+
+
+
+
+
+
+
+
+### old ####
+
+dat <- read.csv("env-seasonal.csv")
 str(dat)
-dat$POP<- as.factor(dat$POP)
+dat$Population<- as.factor(dat$Population)
 
 # summarize by population
-by.pop <- 
-  dat %>% group_by(POP) %>%
-  summarise(n = n(),
-            POP = mean(POP, na.rm = TRUE)
-  )
+# by.pop <- 
+#   dat %>% group_by(Population) %>%
+#   summarise(n = n(),
+#            Population = mean(Population, na.rm = TRUE)
+#  )
 
 # calculate the average of each column based on groups
 by.pop <- dat %>%
-  group_by(POP) %>%
+  group_by(Population) %>%
   summarize(across(everything(), mean))
 
-write.csv(by.pop, "input/popenv.csv")
+write.csv(by.pop, "popenv.csv")
+
+df4 <- by.pop %>% 
+  mutate_all(~(scale(.) %>% as.vector))
+df4
 
 # read in data for pca
-by.pop <- read.csv("input/popenv.csv")
+# by.pop <- read.csv("popenv.csv")
 
 # Subset the data to include only the environmental variables
 env_vars <- by.pop[,2:ncol(by.pop)]
@@ -53,8 +113,14 @@ by.pop[,paste0("PC",1:ncol(pca_data))] <- pca_data
 # View the updated data frame
 head(by.pop)
 
-write.csv(by.pop, "input/popenvPCA.csv")
+write.csv(by.pop, "popenvPCA.csv")
 
-by.pop <- read.csv("input/popenvPCA.csv")
+by.pop <- read.csv("popenvPCA.csv")
 head(by.pop)
-write.table(by.pop, file='input/popenvPCA.tsv', quote=FALSE, sep='\t', row.names = FALSE)
+write.table(by.pop, file='popenvPCA.tsv', quote=FALSE, sep='\t', row.names = FALSE)
+
+
+
+
+
+
