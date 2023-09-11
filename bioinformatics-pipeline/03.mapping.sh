@@ -99,7 +99,7 @@ parallel -j 32 < /workdir/jlw395/align/samtoolsIndexCommands.txt
 
 
 # qualimap for loop
-# may have to increase mem limit:
+# may have to increase mem limit
 #/programs/qualimap_v2.2.1/qualimap bamqc -bam SAMPLE.bam --java-mem-size=30G -outfile SAMPLE.sorted.pdf
 
 [ -f /workdir/jlw395/align/qualimapCommands.txt ] && rm /workdir/jlw395/align/qualimapCommands.txt

@@ -83,8 +83,6 @@ done
 # only 6 files in this batch
 parallel -j 6 < /workdir/kcarbeck/align/samtoolsIndexCommands.txt
 
-
-
 ### qualimap for loop
 # may have to increase mem limit:
 #/programs/qualimap_v2.2.1/qualimap bamqc -bam SAMPLE.bam --java-mem-size=30G -outfile SAMPLE.sorted.pdf
@@ -107,3 +105,4 @@ parallel -j 4 < /workdir/kcarbeck/align/qualimapCommands.txt
 
 # to run and get log output:
 # bash qualimap.sh 2>&1 | tee qualimap_may1_$(date +%Y%m%d-%Hh%Mm%Ss).log
+
