@@ -1,44 +1,25 @@
 ## katherine carbeck
-## 1 sept 2023
+## 12 sept 2023
 ## prep input for the wza
 
 ####### *** ▼ TEST VCF ▼ *** #######
-## subset vcf to test code first
+## subset vcf for 200 lines using awk sort to test code first
 bcftools view --header-only filtered6x_SOSP_316Samples_final_071423.vcf.gz > test.vcf
 bcftools view --no-header filtered6x_SOSP_316Samples_final_071423.vcf.gz | awk '{printf("%f\t%s\n",rand(),$0);}' | sort -t $'\t'  -T . -k1,1g | head -n 200 | cut -f 2- >> test.vcf
+
+## subset vcf using shuf for 20,000 lines
+bcftools view --header-only filtered6x_SOSP_316Samples_final_071423.vcf.gz > test.vcf
+bcftools view --no-header filtered6x_SOSP_316Samples_final_071423.vcf.gz | shuf -n 20000 >> test.vcf
 
 # exceute python script (computeCorrelationsForWZA.py) to compute correlations for the WZA
 # files needed:
     # vcf = filtered6x_SOSP_316Samples_final_071423.vcf.gz
     # population-file = 316samples_pops.txt in the format of 2 columns "Sample_ID" "Population_ID"
     # environments = scaledPopEnvAnnual.csv in the format of columns "Population" followed by n environmental vars
+    # minAlleleCount = min number of alleles used to compute population allele frequnecy. Default = 4
     # output = output file for WZA
-python computeCorrelationsForWZA.py --vcf test.vcf --population-file 316samples_pops.txt --environments scaledPopEnvAnnual.csv --output /workdir/kcarbeck/out/output_corr
-    #! Error:
-   #  Traceback (most recent call last):
-   #    File "/usr/local/lib64/python3.9/site-packages/pandas/core/indexes/base.py", line 3803, in get_loc
-   #      return self._engine.get_loc(casted_key)
-   #    File "pandas/_libs/index.pyx", line 138, in pandas._libs.index.IndexEngine.get_loc
-   #    File "pandas/_libs/index.pyx", line 165, in pandas._libs.index.IndexEngine.get_loc
-   #    File "pandas/_libs/hashtable_class_helper.pxi", line 5745, in pandas._libs.hashtable.PyObjectHashTable.get_item
-   #    File "pandas/_libs/hashtable_class_helper.pxi", line 5753, in pandas._libs.hashtable.PyObjectHashTable.get_item
-   #  KeyError: 'Sample_ID'
-
-   #  The above exception was the direct cause of the following exception:
- 
-   #  Traceback (most recent call last):
-   #    File "/local/workdir/kcarbeck/computeCorrelationsForWZA.py", line 144, in <module>
-   #      main()
-   #    File "/local/workdir/kcarbeck/computeCorrelationsForWZA.py", line 96, in main
-   #      freqs, pop_names = parse_VCF(args.vcf, args.population_file)
-   #    File "/local/workdir/kcarbeck/computeCorrelationsForWZA.py", line 26, in parse_VCF
-   #      sample_to_population = dict(zip(population_df['Sample_ID'], population_df['Population_ID']))
-   #    File "/usr/local/lib64/python3.9/site-packages/pandas/core/frame.py", line 3804, in __getitem__
-   #      indexer = self.columns.get_loc(key)
-   #    File "/usr/local/lib64/python3.9/site-packages/pandas/core/indexes/base.py", line 3805, in get_loc
-   #      raise KeyError(key) from err
-   #  KeyError: 'Sample_ID'
-
+python computeCorrelationsForWZA.py --vcf test.vcf --population-file 316samples_pops.txt --environments scaledPopEnvAnnual.csv --minAlleleCount 4 --verbose --output /workdir/kcarbeck/out/output_corr
+    # took a few seconds for the test file with 20,000 SNPs
 
 ####### *** ▲ TEST VCF ▲ *** #######
 
@@ -53,22 +34,16 @@ pip install cyvcf2
     # vcf = filtered6x_SOSP_316Samples_final_071423.vcf.gz
     # population-file = 316samples_pops.txt in the format of 2 columns "Sample_ID" "Population_ID"
     # environments = scaledPopEnvAnnual.csv in the format of columns "Population" followed by n environmental vars
+    # minAlleleCount = min number of alleles used to compute population allele frequnecy. Default = 4
     # output = output file for WZA
-python computeCorrelationsForWZA.py --vcf filtered6x_SOSP_316Samples_final_071423.vcf.gz --population-file 316samples_pops.txt --environments scaledPopEnvAnnual.csv --output /workdir/kcarbeck/out/output_corr
+python computeCorrelationsForWZA.py --vcf filtered6x_SOSP_316Samples_final_071423.vcf.gz --population-file 316samples_pops.txt --environments scaledPopEnvAnnual.csv --minAlleleCount 4 --verbose --output /workdir/kcarbeck/out/output_corr
+    # started running 12 sept 2023 around 4:00pm
+    # was finished in the morning 13 sept 
 
+#output files:
+    # output_corr.correlations.csv = 2.9G
+    # output_corr.freqs.csv = 4.0G
 
-
-
-
-
-
-
-
-
-
-
-
-
-##
-# bcftools view --header-only /workdir/kcarbeck/filtered6x_SOSP_316Samples_final_071423.vcf.gz > /workdir/kcarbeck/out/test.vcf
-# bcftools view --no-header /workdir/kcarbeck/filtered6x_SOSP_316Samples_final_071423.vcf.gz | shuf -n 200 >> /workdir/kcarbeck/out/test.vcf
+# files are quite large so gzip compress:
+gzip *.csv
+    # gzipped files are now 1.2G and 490M
